@@ -7,7 +7,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "npm run build:css",
+    "build": "npm run build:css && npm run start",
     "build:css": "cross-env NODE_OPTIONS=--max-old-space-size=1024 tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.css --minify",
     "watch:css": "tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.css --watch",
     "check:server": "node --check server.js && node --check server/app.js && node --check server/config.js && node --check server/dispatch.js && node --check server/models.js && node --check server/store.js && node --check server/triage.js",
