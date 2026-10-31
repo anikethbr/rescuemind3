@@ -78,6 +78,8 @@ test("HTTP API exposes health, protects dashboard, and accepts a demo report", a
   const health = await fetch(`${baseUrl}/api/health`);
   assert.equal(health.status, 200);
   assert.equal((await health.json()).status, "ok");
+  assert.match(health.headers.get("content-security-policy"), /object-src 'none'/);
+  assert.equal(health.headers.get("x-content-type-options"), "nosniff");
 
   const denied = await fetch(`${baseUrl}/api/dashboard`);
   assert.equal(denied.status, 401);
@@ -99,6 +101,38 @@ test("HTTP API exposes health, protects dashboard, and accepts a demo report", a
   const reviewed = await fetch(`${baseUrl}/api/incidents/${payload.incident.id}/review`, { method: "PATCH", headers });
   assert.equal(reviewed.status, 200);
   assert.equal((await reviewed.json()).incident.reviewed, true);
+});
+
+test("production refuses to start without a strong dashboard key", () => {
+  assert.throws(() => loadConfig({ NODE_ENV: "production" }), /DASHBOARD_API_KEY/);
+  assert.throws(() => loadConfig({ NODE_ENV: "production", DASHBOARD_API_KEY: "too-short" }), /DASHBOARD_API_KEY/);
+  assert.equal(
+    loadConfig({ NODE_ENV: "production", DASHBOARD_API_KEY: "a".repeat(32) }).dashboardApiKey,
+    "a".repeat(32),
+  );
+});
+
+test("image upload rejects content that does not match its claimed MIME type", async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "rescuemind-upload-test-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const settings = {
+    ...loadConfig({ AI_PROVIDER: "demo", PORT: "8000" }),
+    dataFile: path.join(directory, "data.json"),
+  };
+  const server = createServer(createApp({ settings }));
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  t.after(() => new Promise((resolve, reject) => {
+    server.close((error) => error ? reject(error) : resolve());
+  }));
+  const form = new FormData();
+  form.set("image", new Blob(["not an image"], { type: "image/png" }), "fake.png");
+  const response = await fetch(`http://127.0.0.1:${server.address().port}/api/incidents`, {
+    method: "POST",
+    body: form,
+  });
+  assert.equal(response.status, 415);
+  assert.match((await response.json()).detail, /contents do not match/);
 });
 
 test("configuration rejects invalid port and coordinate values", () => {

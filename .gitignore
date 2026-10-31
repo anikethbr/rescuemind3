@@ -1,4 +1,8 @@
 .env
+.env.*
+!.env.example
 node_modules/
 data/
 static/css/tailwind.css
+coverage/
+npm-debug.log*

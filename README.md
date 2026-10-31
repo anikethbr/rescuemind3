@@ -36,6 +36,8 @@ GEMINI_MODEL=gemma-4-e4b-it
 
 Model availability can vary by API account. Confirm that your configured model is available to your Gemini API key. Distress text and images are sent to the configured model provider; do not submit sensitive personal or medical details unless your organization has approved that data flow.
 
+The local `.env` file is ignored by Git and contains no credentials by default. `.env.example` is the safe template to commit. For production, configure environment variables in the Cloudways/DigitalOcean control panel, use `AI_PROVIDER=gemini`, and provide a newly generated dashboard key of at least 32 characters. For example, generate a key locally with `node --input-type=module -e "import { randomBytes } from 'node:crypto'; console.log(randomBytes(32).toString('hex'))"` and enter it directly in the deployment environment settings—never commit it.
+
 ## Configuration
 
 | Variable | Purpose |
@@ -50,7 +52,7 @@ Model availability can vary by API account. Confirm that your configured model i
 | `DATA_FILE` | JSON store path (default `data/rescuemind.json`) |
 | `HOST`, `PORT` | Bind address and port; Cloudways supplies its port where applicable |
 
-Use a unique, long dashboard key and HTTPS for a public deployment. The shared-key gate is not user accounts or role-based access. For operational use, place the dashboard behind an authenticated reverse proxy.
+Production mode refuses to start without a dashboard key of at least 32 characters. Use a unique key and HTTPS for a public deployment. The shared-key gate is not user accounts or role-based access. For operational use, place the dashboard behind an authenticated reverse proxy.
 
 ## API
 
@@ -70,7 +72,7 @@ This repository now targets Cloudways' Node runtime end-to-end: API server, mult
 
 1. Deploy the repository to the Cloudways Node application and select Node.js 24.
 2. Set the build command to `npm run build` and the start command to `npm start` in the Cloudways application settings.
-3. Configure the environment variables from `.env.example` in Cloudways, including `DASHBOARD_API_KEY`, Gemini settings, and response-centre coordinates. Do not commit `.env` or secrets.
+3. Configure the environment variables from `.env.example` in Cloudways; explicitly set `NODE_ENV=production`, `DASHBOARD_API_KEY`, Gemini settings, and response-centre coordinates. Do not commit `.env` or secrets.
 4. Ensure the application process binds to Cloudways' assigned `PORT`; the server reads `PORT` and binds to `0.0.0.0` by default.
 5. After deployment, open `https://<your-domain>/api/health` and confirm `status` is `ok`. Then load `/` and submit a test report. Check the Cloudways application runtime/startup logs if health does not respond.
 
@@ -97,3 +99,7 @@ npm run build
 ## Safety note
 
 RescueMind is a prototype for response coordination. AI may misclassify messages or locations; operators must verify details with trained responders. Do not rely on AI output as the sole basis for emergency action.
+
+## License
+
+This project is distributed under the MIT License. See [LICENSE](./LICENSE).

@@ -10,19 +10,23 @@ export function loadConfig(env = process.env) {
   const maxImageBytes = integerFrom(env, "MAX_IMAGE_BYTES", 5 * 1024 * 1024);
   const port = integerFrom(env, "PORT", 8000);
   const provider = (env.AI_PROVIDER || "demo").trim().toLowerCase();
+  const dashboardApiKey = (env.DASHBOARD_API_KEY || "").trim();
 
   if (!["demo", "gemini"].includes(provider)) throw new Error("AI_PROVIDER must be 'demo' or 'gemini'");
   if (latitude !== null && (latitude < -90 || latitude > 90)) throw new Error("DISPATCH_BASE_LAT must be between -90 and 90");
   if (longitude !== null && (longitude < -180 || longitude > 180)) throw new Error("DISPATCH_BASE_LON must be between -180 and 180");
   if (maxImageBytes < 1) throw new Error("MAX_IMAGE_BYTES must be positive");
   if (port < 1 || port > 65535) throw new Error("PORT must be between 1 and 65535");
+  if (env.NODE_ENV === "production" && dashboardApiKey.length < 32) {
+    throw new Error("DASHBOARD_API_KEY must contain at least 32 characters in production");
+  }
 
   return {
     aiProvider: provider,
     geminiApiKey: (env.GEMINI_API_KEY || "").trim(),
     geminiModel: (env.GEMINI_MODEL || "gemma-4-e4b-it").trim(),
     geminiApiBaseUrl: (env.GEMINI_API_BASE_URL || "https://generativelanguage.googleapis.com/v1beta").replace(/\/+$/, ""),
-    dashboardApiKey: env.DASHBOARD_API_KEY || "",
+    dashboardApiKey,
     dispatchBaseLat: latitude,
     dispatchBaseLon: longitude,
     maxImageBytes,

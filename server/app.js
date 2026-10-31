@@ -9,6 +9,22 @@ import { classifyDemo, classifyWithGemini, ModelServiceError } from "./triage.js
 
 const allowedImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 
+function imageMatchesMimeType(buffer, mimeType) {
+  if (mimeType === "image/jpeg") {
+    return buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  }
+  if (mimeType === "image/png") {
+    return buffer.length >= 8
+      && buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  }
+  if (mimeType === "image/webp") {
+    return buffer.length >= 12
+      && buffer.toString("ascii", 0, 4) === "RIFF"
+      && buffer.toString("ascii", 8, 12) === "WEBP";
+  }
+  return false;
+}
+
 function authorized(supplied, expected) {
   const a = Buffer.from(supplied);
   const b = Buffer.from(expected);
@@ -45,6 +61,10 @@ export function createApp({ settings = defaultConfig, store = {} } = {}) {
     res.set("X-Content-Type-Options", "nosniff");
     res.set("Referrer-Policy", "strict-origin-when-cross-origin");
     res.set("X-Frame-Options", "SAMEORIGIN");
+    res.set(
+      "Content-Security-Policy",
+      "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; object-src 'none'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://cdn.jsdelivr.net https://*.tile.openstreetmap.org; connect-src 'self'",
+    );
     next();
   });
   app.use("/static", express.static(`${settings.rootDir}/static`));
@@ -95,6 +115,10 @@ export function createApp({ settings = defaultConfig, store = {} } = {}) {
   app.post("/api/incidents", upload.single("image"), asyncRoute(async (req, res) => {
     const message = typeof req.body?.message === "string" ? req.body.message.trim() : "";
     const file = req.file || null;
+    if (file && !imageMatchesMimeType(file.buffer, file.mimetype)) {
+      res.status(415).json({ detail: "The uploaded file contents do not match a supported image format." });
+      return;
+    }
     if (!message && !file) {
       res.status(422).json({ detail: "Add an emergency message or attach a screenshot/photo." });
       return;

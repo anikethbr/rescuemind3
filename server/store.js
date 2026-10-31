@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, open, readFile, rename, rm } from "node:fs/promises";
+import { chmod, mkdir, open, readFile, rename, rm } from "node:fs/promises";
 import path from "node:path";
 import { config } from "./config.js";
 
@@ -128,16 +128,17 @@ function initialStore() {
 }
 
 async function writeStore(data, file) {
-  await mkdir(path.dirname(file), { recursive: true });
+  await mkdir(path.dirname(file), { recursive: true, mode: 0o700 });
   const tempFile = `${file}.${process.pid}.${randomUUID()}.tmp`;
   let handle;
   try {
-    handle = await open(tempFile, "wx");
+    handle = await open(tempFile, "wx", 0o600);
     await handle.writeFile(JSON.stringify(data, null, 2), "utf8");
     await handle.sync();
     await handle.close();
     handle = undefined;
     await rename(tempFile, file);
+    if (process.platform !== "win32") await chmod(file, 0o600);
   } catch (error) {
     if (handle) await handle.close().catch(() => {});
     await rm(tempFile, { force: true }).catch(() => {});
