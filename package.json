@@ -7,12 +7,12 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "cross-env NODE_OPTIONS=--max-old-space-size=1024 npm run check:server && npm run build:css",
+    "build": "npm run build:css",
     "build:css": "cross-env NODE_OPTIONS=--max-old-space-size=1024 tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.css --minify",
     "watch:css": "tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.css --watch",
     "check:server": "node --check server.js && node --check server/app.js && node --check server/config.js && node --check server/dispatch.js && node --check server/models.js && node --check server/store.js && node --check server/triage.js",
     "start": "node server.js",
-    "test": "node --test"
+    "test": "npm run check:server && node --test"
   },
   "dependencies": {
     "dotenv": "^16.6.1",
