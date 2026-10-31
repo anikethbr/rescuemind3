@@ -1,11 +1,24 @@
 {
   "name": "rescuemind",
   "private": true,
+  "type": "module",
   "version": "1.0.0",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "build": "npm run build:css",
+    "build": "npm run check:server && npm run build:css",
     "build:css": "tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.css --minify",
-    "watch:css": "tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.css --watch"
+    "watch:css": "tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.css --watch",
+    "check:server": "node --check server.js && node --check server/app.js && node --check server/config.js && node --check server/dispatch.js && node --check server/models.js && node --check server/store.js && node --check server/triage.js",
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0",
+    "multer": "^2.0.2",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "tailwindcss": "3.4.17"

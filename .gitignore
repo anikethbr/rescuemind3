@@ -1,10 +1,4 @@
 .env
-.venv/
-venv/
 node_modules/
-__pycache__/
-*.py[cod]
-.pytest_cache/
-data/*.tmp
 data/
 static/css/tailwind.css
